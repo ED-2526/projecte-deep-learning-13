@@ -6,6 +6,8 @@ from collections import Counter
 from torch.utils.data import Dataset, DataLoader, Subset, WeightedRandomSampler
 from torchvision import transforms
 
+#prova abel
+
 IMAGES_PATH = "Images"
 BATCH_SIZE = 32
 IMG_SIZE = 224
