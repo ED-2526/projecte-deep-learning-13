@@ -188,6 +188,7 @@ def get_dataloaders():
     # num_workers carrega imatges en paral·lel.
     # pin_memory accelera el pas CPU -> GPU.
     # persistent_workers manté els workers vius entre epochs i evita recrear-los.
+    # drop_last=False evita perdre imatges si l'últim batch no arriba a BATCH_SIZE.
     train_loader = DataLoader(
         train_dataset,
         batch_size=BATCH_SIZE,
