@@ -65,7 +65,7 @@ model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
 model.fc = FCFinal(model.fc.in_features, num_classes)
 model = model.to(device)
 
-# 🔥 FIX IMPORTANTE (device)
+
 criterion = nn.CrossEntropyLoss(weight=class_weights.to(device))
 
 optimizer = optim.Adam(model.parameters(), lr=LR)
@@ -134,7 +134,7 @@ for epoch in range(NUM_EPOCHS):
             val_total += labels.size(0)
             val_correct += (preds == labels).sum().item()
 
-            # 🔥 FIX (usar list en vez de numpy)
+            
             current_val_preds.extend(preds.cpu().tolist())
             current_val_labels.extend(labels.cpu().tolist())
 
@@ -185,7 +185,7 @@ with torch.no_grad():
         test_total += labels.size(0)
         test_correct += (preds == labels).sum().item()
 
-        # 🔥 FIX
+    
         all_test_preds.extend(preds.cpu().tolist())
         all_test_labels.extend(labels.cpu().tolist())
 
