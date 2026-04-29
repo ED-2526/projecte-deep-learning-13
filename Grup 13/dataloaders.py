@@ -9,11 +9,11 @@ from sklearn.model_selection import train_test_split
 
 #CONFIGURACIÓ GENERAL
 
-IMAGES_PATH = "Images"
+IMAGES_PATH = "/home/edxnG13/grup13/Images"
 BATCH_SIZE = 32
 IMG_SIZE = 224
 SEED = 42
-PKL_PATH = "dataset_splits.pkl"
+PKL_PATH = "/home/edxnG13/grup13/dataset.pkl"
 
 
 def load_dataset(root_dir):
