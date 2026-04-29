@@ -18,7 +18,7 @@ wandb.init(
     config={ #indiquem els hiperparàmetres i altres detalls del projecte que volem trackejar a wandb
         "epochs": NUM_EPOCHS, 
         "learning_rate": LR,
-        "batch_size": 32,
+        "batch_size": 128,
         "model": "resnet18",
         "optimizer": "Adam",
         "loss": "CrossEntropyLoss"
@@ -66,7 +66,7 @@ model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
 model.fc = FCFinal(model.fc.in_features, num_classes)
 
 model = model.to(device)
-
+class_weights = class_weights.to(device)
 criterion = nn.CrossEntropyLoss(weight=class_weights) #Fem servir cross entropy loss pq estem en classificació multiclasse
 #Sense el weight la funcio de loss seria L = -log(p_true_class), però amb el weight és L = - w_y * log(p_true_class) on w_y és el pes associat a la classe verdadera, 
 #El que fa és que si una classe és més rara (té menys exemples al train) li assigna un pes més alt, fent que els errors en aquesta classe siguin més importants per a la funció de loss i ajudant al model a aprendre millor aquesta classe minoritària
@@ -86,9 +86,10 @@ for epoch in range(NUM_EPOCHS):
     train_correct = 0
     train_total = 0
 
-    for images, labels in train_loader: #anem reorrentant els batches del train_loader
+    for i, (images, labels) in enumerate(train_loader):
 
-        print("Nou batch d'entrenament:", images.size(0))
+        if (i + 1) % 200 == 0:
+            print(f"Batch {i+1} | mida batch: {images.size(0)}")
 
         images = images.to(device)
         labels = labels.to(device)
