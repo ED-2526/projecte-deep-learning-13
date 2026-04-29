@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+#prova_abel
 
 class MyCNN(nn.Module):
     def __init__(self, num_classes):
