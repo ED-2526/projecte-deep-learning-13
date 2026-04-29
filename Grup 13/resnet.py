@@ -11,12 +11,13 @@ from dataloaders import get_dataloaders, BATCH_SIZE
 
 NUM_EPOCHS = 10
 LR = 1e-4
+nom_grafica = input("Nom de la gràfica a wandb: ")
 
 wandb.init(
     project="ciudades-resnet18",
-    name="resnet18-transfer-learning",
-    config={ #indiquem els hiperparàmetres i altres detalls del projecte que volem trackejar a wandb
-        "epochs": NUM_EPOCHS, 
+    name=nom_grafica,
+    config={
+        "epochs": NUM_EPOCHS,
         "learning_rate": LR,
         "batch_size": BATCH_SIZE,
         "model": "resnet18",
@@ -47,7 +48,6 @@ wandb.config.update({
 class FCFinal(nn.Module):
     def __init__(self, in_features, num_classes):
         super().__init__()
-
         self.classifier = nn.Sequential(
             nn.Linear(in_features, 256),
             nn.ReLU(),
@@ -62,26 +62,17 @@ class FCFinal(nn.Module):
 # =========================
 
 model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
-
-#Per a resnet18, el numero de in_features de la capa final és 512 sempre
 model.fc = FCFinal(model.fc.in_features, num_classes)
-
 model = model.to(device)
 
-criterion = nn.CrossEntropyLoss(weight=class_weights.to(device)) #Fem servir cross entropy loss pq estem en classificació multiclasse
-#Sense el weight la funcio de loss seria L = -log(p_true_class), però amb el weight és L = - w_y * log(p_true_class) on w_y és el pes associat a la classe verdadera, 
-#El que fa és que si una classe és més rara (té menys exemples al train) li assigna un pes més alt, fent que els errors en aquesta classe siguin més importants per a la funció de loss i ajudant al model a aprendre millor aquesta classe minoritària
-#Canvi important: class_weights.to(device) posa els pesos al mateix dispositiu que el model, evitant errors CPU/GPU.
+# 🔥 FIX IMPORTANTE (device)
+criterion = nn.CrossEntropyLoss(weight=class_weights.to(device))
 
 optimizer = optim.Adam(model.parameters(), lr=LR)
 
-#Especifiquem què mirem amb wandb, cada 10 batches guardem els gardients i guardem gradient i parmeteres cada 10 batches, així podem veure com evolucionen al llarg de l'entrenament
 wandb.watch(model, criterion, log="all", log_freq=10)
 
-#Guardem el millor model segons la validation accuracy
 best_val_acc = 0.0
-
-# Guardarem les prediccions de la millor validació per fer la seva matriu de confusió
 best_val_preds = []
 best_val_labels = []
 
@@ -90,28 +81,22 @@ best_val_labels = []
 # =========================
 
 for epoch in range(NUM_EPOCHS):
-    model.train() #indiquem què estem fent entrenament, però s'han d'ajustar els paràmetres tipo dropout o batchnorm
+    model.train()
 
     train_loss_total = 0
     train_correct = 0
     train_total = 0
 
-    for batch_idx, (images, labels) in enumerate(train_loader): #anem reorrentant els batches del train_loader
-
-        #Mostrem progrés cada 50 batches per no saturar la sortida i no alentir tant l'entrenament
-        if batch_idx % 50 == 0:
-            print(f"Epoch {epoch+1}/{NUM_EPOCHS} | Batch {batch_idx}/{len(train_loader)}")
-
-        #non_blocking=True pot accelerar la transferència CPU -> GPU quan pin_memory=True al DataLoader
+    for images, labels in train_loader:
         images = images.to(device, non_blocking=True)
         labels = labels.to(device, non_blocking=True)
 
-        outputs = model(images) #fem el forward pass i obtenim les prediccions
-        loss = criterion(outputs, labels) #calculem la loss 
+        outputs = model(images)
+        loss = criterion(outputs, labels)
 
-        optimizer.zero_grad() #posem els gradient a 0
-        loss.backward() #calculem els gradients fent el backward pass
-        optimizer.step() #actualitzem els pesos del model fent un pas d'optimització
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
         train_loss_total += loss.item()
 
@@ -132,7 +117,6 @@ for epoch in range(NUM_EPOCHS):
     val_correct = 0
     val_total = 0
 
-    # Guardem labels i prediccions de validació per poder fer matriu de confusió
     current_val_preds = []
     current_val_labels = []
 
@@ -150,13 +134,13 @@ for epoch in range(NUM_EPOCHS):
             val_total += labels.size(0)
             val_correct += (preds == labels).sum().item()
 
-            current_val_preds.extend(preds.cpu().numpy())
-            current_val_labels.extend(labels.cpu().numpy())
+            # 🔥 FIX (usar list en vez de numpy)
+            current_val_preds.extend(preds.cpu().tolist())
+            current_val_labels.extend(labels.cpu().tolist())
 
     val_loss = val_loss_total / len(val_loader)
     val_acc = 100 * val_correct / val_total
 
-    #Canvi a wandb: noms agrupats perquè train i validation quedin junts a les gràfiques de loss i accuracy
     wandb.log({
         "epoch": epoch + 1,
         "loss/train": train_loss,
@@ -170,7 +154,6 @@ for epoch in range(NUM_EPOCHS):
     print(f"Val Loss: {val_loss:.4f} | Val Acc: {val_acc:.2f}%")
     print("-" * 40)
 
-    #Guardem el millor model, no només l'últim
     if val_acc > best_val_acc:
         best_val_acc = val_acc
         best_val_preds = current_val_preds
@@ -178,7 +161,6 @@ for epoch in range(NUM_EPOCHS):
 
         torch.save(model.state_dict(), "best_resnet18_ciudades.pth")
         wandb.save("best_resnet18_ciudades.pth")
-        print(f"Nou millor model guardat amb Val Acc: {best_val_acc:.2f}%")
 
 # =========================
 # TEST FINAL
@@ -189,7 +171,6 @@ model.eval()
 test_correct = 0
 test_total = 0
 
-# Guardem totes les prediccions i labels del test per construir la matriu de confusió
 all_test_preds = []
 all_test_labels = []
 
@@ -204,8 +185,9 @@ with torch.no_grad():
         test_total += labels.size(0)
         test_correct += (preds == labels).sum().item()
 
-        all_test_preds.extend(preds.cpu().numpy())
-        all_test_labels.extend(labels.cpu().numpy())
+        # 🔥 FIX
+        all_test_preds.extend(preds.cpu().tolist())
+        all_test_labels.extend(labels.cpu().tolist())
 
 test_acc = 100 * test_correct / test_total
 
@@ -213,16 +195,12 @@ wandb.log({
     "accuracy/test": test_acc,
     "accuracy/best_validation": best_val_acc,
 
-    # Matriu de confusió de la millor validació
-    # Serveix per veure quines classes confonia el model durant la validació
     "confusion_matrix/validation": wandb.plot.confusion_matrix(
         preds=best_val_preds,
         y_true=best_val_labels,
         class_names=class_names
     ),
 
-    # Matriu de confusió del test
-    # Serveix per veure els errors finals sobre dades no vistes
     "confusion_matrix/test": wandb.plot.confusion_matrix(
         preds=all_test_preds,
         y_true=all_test_labels,
@@ -233,15 +211,9 @@ wandb.log({
 print(f"Test Accuracy: {test_acc:.2f}%")
 print(f"Best Val Accuracy: {best_val_acc:.2f}%")
 
-# Guardem resultats finals al resum de W&B
 wandb.run.summary["test_accuracy"] = test_acc
 wandb.run.summary["best_val_accuracy"] = best_val_acc
 
-# =========================
-# GUARDAR MODELO
-# =========================
-
-#Guardem també l'últim model entrenat
 torch.save(model.state_dict(), "last_resnet18_ciudades.pth")
 wandb.save("last_resnet18_ciudades.pth")
 
