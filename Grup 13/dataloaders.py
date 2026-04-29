@@ -121,8 +121,8 @@ def load_pickle():
 
     return data
 
-#Per no haver de tornar a llegir la carpeta d'imatges tota l'estona i si tenim carpetes diferents a cada ordinador no importa
-# perquè el pickle ja té els paths de les imatges i les etiquetes associades, així que només cal carregar el pickle i crear els dataloaders a partir d'aquesta informació.
+#Per no haver de tornar a llegir la carpeta d'imatges tota l'estona i com que tots tindrem la mateixa carpeta superior
+#és a dir, tots tindrem les mateixes rutes a les fotos així millor
 def get_dataloaders():
 
     #Tornem a carregar les dades del pickle
