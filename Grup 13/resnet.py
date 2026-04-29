@@ -11,10 +11,12 @@ from dataloaders import get_dataloaders
 
 NUM_EPOCHS = 10
 LR = 1e-4
+nom_grafica = input("Nom de la gràfica a wandb: ")
+
 
 wandb.init(
     project="ciudades-resnet18",
-    name="resnet18-transfer-learning",
+    name=nom_grafica,
     config={ #indiquem els hiperparàmetres i altres detalls del projecte que volem trackejar a wandb
         "epochs": NUM_EPOCHS, 
         "learning_rate": LR,
