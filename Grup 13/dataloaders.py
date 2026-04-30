@@ -9,10 +9,12 @@ from sklearn.model_selection import train_test_split
 
 # CONFIGURACIÓ GENERAL
 IMAGES_PATH = "/home/edxnG13/grup13/Images"
-BATCH_SIZE = 128
+BATCH_SIZE = 64
 IMG_SIZE = 224
 SEED = 42
-PKL_PATH = "/home/edxnG13/grup13/dataset.pkl"
+#PKL_PATH = "/home/edxnG13/grup13/dataset.pkl"
+
+PKL_PATH = "/home/edxnG13/grup13/dataset_pickle.pkl"
 
 # num_workers indica quants processos de CPU carreguen imatges en paral·lel.
 # 4 és un valor bastant habitual: accelera la càrrega sense saturar massa la màquina.
@@ -219,4 +221,6 @@ def get_dataloaders():
         drop_last=False
     )
 
+
     return train_loader, val_loader, test_loader, class_names, weights_tensor
+

@@ -4,12 +4,14 @@ import torch.optim as optim
 from torchvision import models
 import wandb
 from dataloaders import get_dataloaders, BATCH_SIZE
+from agrupa_continents import mapping_continents, to_continent_index_list
+import wandb.sklearn
 
 # =========================
 # CONFIG
 # =========================
 
-NUM_EPOCHS = 10
+NUM_EPOCHS = 8
 LR = 1e-4
 nom_grafica = input("Nom de la gràfica a wandb: ")
 
@@ -97,7 +99,10 @@ for epoch in range(NUM_EPOCHS):
     train_correct = 0
     train_total = 0
 
-    for images, labels in train_loader: #anem reorrentant els batches del train_loader
+    for i, (images, labels) in enumerate(train_loader):
+
+        if (i + 1) % 200 == 0:
+            print(f"Batch {i+1} | mida batch: {images.size(0)}")
 
         #non_blocking=True pot accelerar la transferència CPU -> GPU quan pin_memory=True al DataLoader
         images = images.to(device, non_blocking=True)
@@ -208,26 +213,55 @@ with torch.no_grad():
 
 test_acc = 100 * test_correct / test_total
 
+continent_names = sorted(list(set(mapping_continents.values())))
+
+# 3. Transformem les dades a ÍNDEXS numèrics
+val_labels_cont = to_continent_index_list(best_val_labels, class_names, mapping_continents, continent_names)
+val_preds_cont = to_continent_index_list(best_val_preds, class_names, mapping_continents, continent_names)
+
+test_labels_cont = to_continent_index_list(all_test_labels, class_names, mapping_continents, continent_names)
+test_preds_cont = to_continent_index_list(all_test_preds, class_names, mapping_continents, continent_names)
+
+
+
 wandb.log({
     "accuracy/test": test_acc,
     "accuracy/best_validation": best_val_acc,
 
-    # Matriu de confusió de la millor validació
-    # Serveix per veure quines classes confonia el model durant la validació
-    "confusion_matrix/validation": wandb.plot.confusion_matrix(
-        preds=best_val_preds,
-        y_true=best_val_labels,
-        class_names=class_names
+    # 1. Matrius per Ciutats (Detallades)
+    
+    "confusion_matrix/validation_cities": wandb.plot.confusion_matrix(
+        preds=best_val_preds, y_true=best_val_labels,
+        class_names=class_names, title="Validació: Ciutats"
     ),
+    
+    "confusion_matrix/test_cities": wandb.plot.confusion_matrix(
+        preds=all_test_preds, y_true=all_test_labels,
+        class_names=class_names, title="Test: Ciutats"
+    ),
+    
+    
+    # 2. Matrius per Continents (Grupals - Molt més fàcils de llegir)
+    "confusion_matrix/validation_continents": wandb.plot.confusion_matrix(
+        preds=val_preds_cont, y_true=val_labels_cont,
+        class_names=continent_names, title="Validació: Continents"
+    ),
+    
+    "confusion_matrix/test_continents": wandb.plot.confusion_matrix(
+        preds=test_preds_cont, y_true=test_labels_cont,
+        class_names=continent_names, title="Test: Continents"
+    )
 
-    # Matriu de confusió del test
-    # Serveix per veure els errors finals sobre dades no vistes
-    "confusion_matrix/test": wandb.plot.confusion_matrix(
-        preds=all_test_preds,
-        y_true=all_test_labels,
-        class_names=class_names
+   , 
+    # MATRIU DE CONTINENTS EN PERCENTATGES
+    "confusion_matrix/test_continents_norm": wandb.sklearn.plot_confusion_matrix(
+        y_true=test_labels_cont, 
+        y_pred=test_preds_cont, 
+        labels=continent_names
+        # Per defecte, aquest mètode ja sol normalitzar o permetre veure-ho millor
     )
 })
+# Imprimim també els resultats per consola})
 
 print(f"Test Accuracy: {test_acc:.2f}%")
 print(f"Best Val Accuracy: {best_val_acc:.2f}%")
