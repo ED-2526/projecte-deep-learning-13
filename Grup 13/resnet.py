@@ -16,7 +16,7 @@ from sklearn.metrics import confusion_matrix
 
 NUM_EPOCHS = 10
 LR = 1e-4
-nom_grafica = "efficientnet_b0 + fc_deep"
+nom_grafica = "efficientnet_b0 + fc_deep_dropout"
 
 wandb.init(
     project="ciudades-resnet18",
@@ -28,7 +28,7 @@ wandb.init(
         "model": "efficientnet_b0",
         "optimizer": "Adam",
         "loss": "CrossEntropyLoss",
-        "fc": "Linear(512)-ReLU-Linear(256)-ReLU-Linear"
+        "fc": "Linear(512)-ReLU-Dropout(0.5)-Linear(256)-ReLU-Dropout(0.3)-Linear"
     }
 )
 
@@ -58,13 +58,19 @@ class FCFinal(nn.Module):
         self.classifier = nn.Sequential(
             nn.Linear(in_features, 512),
             nn.ReLU(),
+            nn.Dropout(p=0.5),
+
             nn.Linear(512, 256),
             nn.ReLU(),
+            nn.Dropout(p=0.3),
+
             nn.Linear(256, num_classes)
         )
 
     def forward(self, x):
         return self.classifier(x)
+
+
 
 # =========================
 # MODEL
