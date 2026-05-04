@@ -51,7 +51,7 @@ wandb.config.update({
 # HEAD FINAL
 # =========================
 
-class FCFinal_Deep(nn.Module):
+class FCFinal(nn.Module):
     def __init__(self, in_features, num_classes):
         super().__init__()
 
