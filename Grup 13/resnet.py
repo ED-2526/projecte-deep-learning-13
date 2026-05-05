@@ -16,7 +16,7 @@ from sklearn.metrics import confusion_matrix
 
 NUM_EPOCHS = 10
 LR = 1e-4
-nom_grafica = "SGD amb Momentum"
+nom_grafica = "AdamW"
 
 wandb.init(
     project="ciudades-resnet18",
@@ -26,7 +26,7 @@ wandb.init(
         "learning_rate": LR,
         "batch_size": BATCH_SIZE,
         "model": "efficientnet_b0",
-        "optimizer": "SGD amb momentum",
+        "optimizer": "AdamW",
         "loss": "CrossEntropyLoss",
         "fc": "Linear(256)-BatchNorm-ReLU-Linear"
     }
@@ -85,7 +85,8 @@ criterion = nn.CrossEntropyLoss(weight=class_weights.to(device)) #Fem servir cro
 #El que fa és que si una classe és més rara (té menys exemples al train) li assigna un pes més alt, fent que els errors en aquesta classe siguin més importants per a la funció de loss i ajudant al model a aprendre millor aquesta classe minoritària
 #Canvi important: class_weights.to(device) posa els pesos al mateix dispositiu que el model, evitant errors CPU/GPU.
 
-optimizer = optim.SGD(model.parameters(), lr=1e-3, momentum=0.9, weight_decay=1e-4)
+optimizer = optim.AdamW(model.parameters(), lr=LR, weight_decay=1e-4)
+
 
 #Especifiquem què mirem amb wandb, cada 10 batches guardem els gardients i guardem gradient i parmeteres cada 10 batches, així podem veure com evolucionen al llarg de l'entrenament
 wandb.watch(model, criterion, log="all", log_freq=10)
