@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 
 # CONFIGURACIÓ GENERAL
 IMAGES_PATH = "/home/edxnG13/grup13/Images"
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 IMG_SIZE = 224
 SEED = 42
 #PKL_PATH = "/home/edxnG13/grup13/dataset.pkl"
@@ -29,7 +29,7 @@ def load_dataset(root_dir):
     """
     Retorna una llista de mostres, els noms de les classes i el diccionari classe -> índex.
 
-    Cada mostra és una tupla:
+    Cada mostra és una tupla (samples):
         (camí_de_la_imatge, etiqueta_numèrica)
 
     Així evitem tenir dues llistes separades, image_paths i labels.
@@ -61,8 +61,8 @@ def load_dataset(root_dir):
 
 class ImageDataset(Dataset):
     def __init__(self, samples, transform=None):
-        self.samples = samples      # Llista de tuples: (path, label)
-        self.transform = transform  # Transformacions de torchvision
+        self.samples = samples      #Llista de tuples: (path, label)
+        self.transform = transform  #Transformacions de torchvision
 
     def __len__(self):
         return len(self.samples)
@@ -153,12 +153,13 @@ def get_dataloaders():
     transform = transforms.Compose([
         transforms.Resize((IMG_SIZE, IMG_SIZE)),
         transforms.ToTensor(),
-        transforms.Normalize(
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225]
+        transforms.Normalize( #x_normalitzat = (x - mean) / std
+            mean=[0.485, 0.456, 0.406], #mitjana dels canals R, G i B d'ImageNet
+            std=[0.229, 0.224, 0.225] #desviació estàndard dels canals R, G i B d'ImageNet
         )
     ])
 
+    
     dataset = ImageDataset(
         samples=samples,
         transform=transform
@@ -195,9 +196,9 @@ def get_dataloaders():
         train_dataset,
         batch_size=BATCH_SIZE,
         shuffle=True,
-        num_workers=NUM_WORKERS,
-        pin_memory=PIN_MEMORY,
-        persistent_workers=NUM_WORKERS > 0,
+        num_workers=NUM_WORKERS, #això és al passar les imatges i transformar, que vagi de 4 en 4
+        pin_memory=PIN_MEMORY, #perquè guardi a la RAM que és més eficient per passar a GPU
+        persistent_workers=NUM_WORKERS > 0, #perquè els workers es mantinguin vius entre epochs i no es recreïn cada vegada 
         drop_last=False
     )
 

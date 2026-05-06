@@ -16,7 +16,7 @@ from sklearn.metrics import confusion_matrix
 
 NUM_EPOCHS = 10
 LR = 1e-4
-nom_grafica = "AdamW"
+nom_grafica = input("Nom de la gràfica a W&B: ")
 
 wandb.init(
     project="ciudades-resnet18",
@@ -93,6 +93,7 @@ wandb.watch(model, criterion, log="all", log_freq=10)
 
 #Guardem el millor model segons la validation accuracy
 best_val_acc = 0.0
+best_val_acc_cont = 0.0
 
 # Guardarem les prediccions de la millor validació per fer la seva matriu de confusió
 best_val_preds = []
@@ -119,7 +120,7 @@ for epoch in range(NUM_EPOCHS):
             print(f"Batch {i+1} | mida batch: {images.size(0)}")
 
         #non_blocking=True pot accelerar la transferència CPU -> GPU quan pin_memory=True al DataLoader
-        images = images.to(device, non_blocking=True)
+        images = images.to(device, non_blocking=True) #al carregar les imatges un proces no bloquegi a l'altre
         labels = labels.to(device, non_blocking=True)
 
         outputs = model(images) #fem el forward pass i obtenim les prediccions
@@ -135,11 +136,12 @@ for epoch in range(NUM_EPOCHS):
         train_total += labels.size(0)
         train_correct += (preds == labels).sum().item()
 
-        # 🔹 Accuracy per CONTINENTS (cal fer-ho dins del loop!)
+        #les etiquetes que haurien de ser (ground truth)
         labels_cont = to_continent_index_list(
             labels.cpu().tolist(), class_names, mapping_continents, continent_names
         )
 
+        #les etiquetes que ha predit el model, transformades a continents
         preds_cont = to_continent_index_list(
             preds.cpu().tolist(), class_names, mapping_continents, continent_names
         )
@@ -276,10 +278,7 @@ test_acc = 100 * test_correct / test_total
 
 continent_names = sorted(list(set(mapping_continents.values())))
 
-# 3. Transformem les dades a ÍNDEXS numèrics
-val_labels_cont = to_continent_index_list(best_val_labels, class_names, mapping_continents, continent_names)
-val_preds_cont = to_continent_index_list(best_val_preds, class_names, mapping_continents, continent_names)
-
+#Accuracy del test per continents
 test_labels_cont = to_continent_index_list(all_test_labels, class_names, mapping_continents, continent_names)
 test_preds_cont = to_continent_index_list(all_test_preds, class_names, mapping_continents, continent_names)
 
@@ -330,7 +329,7 @@ log_cm(all_test_labels, all_test_preds, class_names,
        "confusion_matrix/cities/test")
 
 # CONTINENTS
-log_cm(val_labels_cont, val_preds_cont, continent_names,
+log_cm(labels_cont, preds_cont, continent_names,
        "Validació: Continents",
        "confusion_matrix/continents/validation")
 

@@ -18,3 +18,5 @@ mapping_continents = {
 def to_continent_index_list(indices, classes, mapping, cont_names):
     # Agafa l'índex de la ciutat -> Nom ciutat -> Nom continent -> Índex del continent
     return [cont_names.index(mapping[classes[i]]) for i in indices]
+
+#li passes un numero, troba qui és la classe, després el continent i finalment l'índex del continent
