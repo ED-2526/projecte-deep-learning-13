@@ -50,6 +50,12 @@ wandb.config.update({
 # =========================
 # HEAD FINAL
 # =========================
+# Batch Normalization:
+# Normalitza la sortida de la capa Linear per a cada batch (mitjana ~0 i desviació ~1),
+# estabilitzant els valors interns de la xarxa. Això fa que l'entrenament sigui més
+# ràpid i estable, evita problemes de valors massa grans o petits, i millora la
+# generalització del model. A més, incorpora dos paràmetres aprenables (gamma i beta)
+# que permeten ajustar l'escala i el desplaçament de les dades normalitzades.
 
 class FCFinal(nn.Module):
     def __init__(self, in_features, num_classes):
@@ -88,7 +94,7 @@ criterion = nn.CrossEntropyLoss(weight=class_weights.to(device)) #Fem servir cro
 optimizer = optim.AdamW(model.parameters(), lr=LR, weight_decay=1e-4)
 
 
-#Especifiquem què mirem amb wandb, cada 10 batches guardem els gardients i guardem gradient i parmeteres cada 10 batches, així podem veure com evolucionen al llarg de l'entrenament
+#Especifiquem què mirem amb wandb, cada 10 batches guardem els gardients i parmeteres cada 10 batches, així podem veure com evolucionen al llarg de l'entrenament
 wandb.watch(model, criterion, log="all", log_freq=10)
 
 #Guardem el millor model segons la validation accuracy
@@ -114,9 +120,9 @@ for epoch in range(NUM_EPOCHS):
     correct_train_cont = 0
     total_train_cont = 0
 
-    for i, (images, labels) in enumerate(train_loader):
+    for i, (images, labels) in enumerate(train_loader):  # loop de batches 
 
-        if (i + 1) % 200 == 0:
+        if (i + 1) % 200 == 0:  # print cada 200 batches per veure com va l'entrenament i la mida dels batches (l'últim batch pot ser més petit si no drop_last=True al DataLoader)
             print(f"Batch {i+1} | mida batch: {images.size(0)}")
 
         #non_blocking=True pot accelerar la transferència CPU -> GPU quan pin_memory=True al DataLoader
@@ -126,13 +132,14 @@ for epoch in range(NUM_EPOCHS):
         outputs = model(images) #fem el forward pass i obtenim les prediccions
         loss = criterion(outputs, labels) #calculem la loss
 
+        #backpropagation i optimització
         optimizer.zero_grad() #posem els gradient a 0
         loss.backward() #calculem els gradients fent el backward pass
         optimizer.step() #actualitzem els pesos del model fent un pas d'optimització
 
         train_loss_total += loss.item()
 
-        _, preds = torch.max(outputs, 1) #mirem quina classe ha predicho el model per cada imatge del batch
+        _, preds = torch.max(outputs, 1) #mirem quina classe ha predit el model per cada imatge del batch
         train_total += labels.size(0)
         train_correct += (preds == labels).sum().item()
 
@@ -175,7 +182,7 @@ for epoch in range(NUM_EPOCHS):
     current_val_preds = []
     current_val_labels = []
 
-    with torch.no_grad():
+    with torch.no_grad():  # no calcula gradients durant la validació
         for images, labels in val_loader:
             images = images.to(device, non_blocking=True)
             labels = labels.to(device, non_blocking=True)
@@ -288,9 +295,9 @@ total_cont = len(test_labels_cont)
 
 test_acc_cont = 100 * correct_cont / total_cont
 
-#ACCURACY CONTINENTS VALIDACIÓ
 
 
+# funció confussion matrix per W&B, amb opció de normalitzar per mostrar percentatges en lloc de nombres absoluts
 def log_cm(y_true, y_pred, class_names, title, key, normalize=False):
     cm = confusion_matrix(y_true, y_pred, normalize='true' if normalize else None)
 
