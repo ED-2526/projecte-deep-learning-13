@@ -28,7 +28,7 @@ wandb.init(
         "model": "efficientnet_b0",
         "optimizer": "AdamW",
         "loss": "CrossEntropyLoss",
-        "fc": "Linear(256)-BatchNorm-ReLU-Linear"
+        "fc": "Linear(128)-BatchNorm-ReLU-Linear"
     }
 )
 
@@ -62,10 +62,10 @@ class FCFinal(nn.Module):
         super().__init__()
 
         self.classifier = nn.Sequential(
-            nn.Linear(in_features, 256),
-            nn.BatchNorm1d(256),
+            nn.Linear(in_features,96),
+            nn.BatchNorm1d(96),
             nn.ReLU(),
-            nn.Linear(256, num_classes)
+            nn.Linear(96, num_classes)
         )
 
     def forward(self, x):
@@ -99,13 +99,12 @@ wandb.watch(model, criterion, log="all", log_freq=10)
 
 #Guardem el millor model segons la validation accuracy
 best_val_acc = 0.0
-best_val_acc_cont = 0.0
+
 
 # Guardarem les prediccions de la millor validació per fer la seva matriu de confusió
 best_val_preds = []
 best_val_labels = []
 
-continent_names = sorted(list(set(mapping_continents.values())))
 
 # =========================
 # TRAIN
@@ -117,8 +116,7 @@ for epoch in range(NUM_EPOCHS):
     train_loss_total = 0
     train_correct = 0
     train_total = 0
-    correct_train_cont = 0
-    total_train_cont = 0
+
 
     for i, (images, labels) in enumerate(train_loader):  # loop de batches 
 
@@ -143,24 +141,11 @@ for epoch in range(NUM_EPOCHS):
         train_total += labels.size(0)
         train_correct += (preds == labels).sum().item()
 
-        #les etiquetes que haurien de ser (ground truth)
-        labels_cont = to_continent_index_list(
-            labels.cpu().tolist(), class_names, mapping_continents, continent_names
-        )
-
-        #les etiquetes que ha predit el model, transformades a continents
-        preds_cont = to_continent_index_list(
-            preds.cpu().tolist(), class_names, mapping_continents, continent_names
-        )
-
-        for y, p in zip(labels_cont, preds_cont):
-            total_train_cont += 1
-            if y == p:
-                correct_train_cont += 1
+       
+   
 
     train_loss = train_loss_total / len(train_loader)
     train_acc = 100 * train_correct / train_total
-    train_acc_cont = 100 * correct_train_cont / total_train_cont
 
     
 
@@ -174,9 +159,7 @@ for epoch in range(NUM_EPOCHS):
     val_correct = 0
     val_total = 0
 
-    # CONTINENTS ACCURACY
-    correct_val_cont = 0
-    total_val_cont = 0
+   
 
     # Guardem labels i prediccions de validació per poder fer matriu de confusió
     current_val_preds = []
@@ -200,32 +183,10 @@ for epoch in range(NUM_EPOCHS):
             current_val_preds.extend(preds.cpu().tolist())
             current_val_labels.extend(labels.cpu().tolist())
 
-            # =========================
-            # ACCURACY PER CONTINENTS (DINS LOOP)
-            # =========================
-
-            labels_cont = to_continent_index_list(
-                labels.cpu().tolist(),
-                class_names,
-                mapping_continents,
-                continent_names
-            )
-
-            preds_cont = to_continent_index_list(
-                preds.cpu().tolist(),
-                class_names,
-                mapping_continents,
-                continent_names
-            )
-
-            for y, p in zip(labels_cont, preds_cont):
-                total_val_cont += 1
-                if y == p:
-                    correct_val_cont += 1
+            
 
     val_loss = val_loss_total / len(val_loader)
     val_acc = 100 * val_correct / val_total
-    val_acc_cont = 100 * correct_val_cont / total_val_cont
 
     # Canvi a wandb: noms agrupats perquè train i validation quedin junts a les gràfiques
     wandb.log({
@@ -234,8 +195,6 @@ for epoch in range(NUM_EPOCHS):
         "loss/validation": val_loss,
         "accuracy/train": train_acc,
         "accuracy/validation": val_acc,
-        "accuracy/train/continents": train_acc_cont,
-        "accuracy/validation/continents": val_acc_cont
     })
 
     print(f"Epoch {epoch+1}/{NUM_EPOCHS}")
@@ -283,17 +242,7 @@ with torch.no_grad():
 
 test_acc = 100 * test_correct / test_total
 
-continent_names = sorted(list(set(mapping_continents.values())))
 
-#Accuracy del test per continents
-test_labels_cont = to_continent_index_list(all_test_labels, class_names, mapping_continents, continent_names)
-test_preds_cont = to_continent_index_list(all_test_preds, class_names, mapping_continents, continent_names)
-
-#ACCURACY CONTINENTS TEST
-correct_cont = sum([p == y for p, y in zip(test_preds_cont, test_labels_cont)])
-total_cont = len(test_labels_cont)
-
-test_acc_cont = 100 * correct_cont / total_cont
 
 
 
@@ -322,8 +271,6 @@ def log_cm(y_true, y_pred, class_names, title, key, normalize=False):
 wandb.log({
     "accuracy/test": test_acc,
     "accuracy/best_validation": best_val_acc,
-    "accuracy/test_continents": test_acc_cont,
-    "accuracy/validation_continents": val_acc_cont
 })
 
 # CIUTATS
@@ -335,34 +282,18 @@ log_cm(all_test_labels, all_test_preds, class_names,
        "Test: Ciutats",
        "confusion_matrix/cities/test")
 
-# CONTINENTS
-log_cm(labels_cont, preds_cont, continent_names,
-       "Validació: Continents",
-       "confusion_matrix/continents/validation")
-
-log_cm(test_labels_cont, test_preds_cont, continent_names,
-       "Test: Continents",
-       "confusion_matrix/continents/test")
-
-# NORMALITZADA
-log_cm(test_labels_cont, test_preds_cont, continent_names,
-       "Test: Continents (%)",
-       "confusion_matrix/continents_normalized/test",
-       normalize=True)
 
 # Imprimim també els resultats per consola})
 
 
 print(f"Test Accuracy: {test_acc:.2f}%")
 print(f"Best Val Accuracy: {best_val_acc:.2f}%")
-print(f"Test Accuracy (Continents): {test_acc_cont:.2f}%")
-print(f"Validation Accuracy (Continents): {val_acc_cont:.2f}%")
+
 
 # Guardem resultats finals al resum de W&B
 wandb.run.summary["test_accuracy"] = test_acc
 wandb.run.summary["best_val_accuracy"] = best_val_acc
-wandb.run.summary["test_accuracy_continents"] = test_acc_cont
-wandb.run.summary["val_accuracy_continents"] = val_acc_cont
+
 # =========================
 # GUARDAR MODELO
 # =========================
