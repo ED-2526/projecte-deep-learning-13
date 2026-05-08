@@ -155,7 +155,10 @@ def get_dataloaders():
     # Aquí sí que afegim data augmentation perquè el model vegi variacions de les imatges
     # i no memoritzi tant el dataset.
     train_transform = transforms.Compose([
-        transforms.Resize((IMG_SIZE, IMG_SIZE)),
+        transforms.RandomResizedCrop(
+            IMG_SIZE,
+            scale=(0.8, 1.0)
+        ),
 
     # Gira horitzontalment algunes imatges de forma aleatòria.
     # Ajuda a generalitzar si l'orientació esquerra/dreta no és important.
@@ -168,8 +171,7 @@ def get_dataloaders():
             contrast=0.2,
             saturation=0.2
         ),
-        transforms.RandomRotation(10),
-        
+
         transforms.ToTensor(),
         transforms.Normalize(
             mean=[0.485, 0.456, 0.406],

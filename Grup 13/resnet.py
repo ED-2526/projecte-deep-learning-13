@@ -29,7 +29,7 @@ wandb.init(
         "optimizer": "AdamW",
         "loss": "CrossEntropyLoss",
         "fc": "Linear(96)-BatchNorm-ReLU-Linear",
-        "augmentation": "augmentation": "RandomHorizontalFlip + ColorJitter + RandomRotation(10)"
+        "augmentation": "augmentation: RandomResizedCrop + RandomHorizontalFlip + ColorJitter"
     }
 )
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
