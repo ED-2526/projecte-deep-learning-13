@@ -148,7 +148,7 @@ def get_dataloaders():
     # mean=[0.485, 0.456, 0.406] → mitjana dels canals R, G i B.
     # std=[0.229, 0.224, 0.225] → desviació estàndard dels canals R, G i B.
     #
-    # Ho fem perquè ResNet18 està preentrenada amb ImageNet i espera entrades
+    # # Ho fem perquè EfficientNet-B0 està preentrenada amb ImageNet
     # amb una distribució semblant a la que va veure durant el seu entrenament original.
     
     # Transformacions per TRAIN.
@@ -168,7 +168,8 @@ def get_dataloaders():
             contrast=0.2,
             saturation=0.2
         ),
-
+        transforms.RandomRotation(10),
+        
         transforms.ToTensor(),
         transforms.Normalize(
             mean=[0.485, 0.456, 0.406],
@@ -231,7 +232,7 @@ def get_dataloaders():
         train_dataset,
         batch_size=BATCH_SIZE,
         shuffle=True,
-        num_workers=NUM_WORKERS, #això és al passar les imatges i transformar, que vagi de 4 en 4
+        num_workers=NUM_WORKERS, #carrega i transforma imatges en paral·lel amb 4 processos
         pin_memory=PIN_MEMORY, #perquè guardi a la RAM que és més eficient per passar a GPU
         persistent_workers=NUM_WORKERS > 0, #perquè els workers es mantinguin vius entre epochs i no es recreïn cada vegada 
         drop_last=False
