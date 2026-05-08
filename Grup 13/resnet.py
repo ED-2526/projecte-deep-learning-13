@@ -21,17 +21,17 @@ nom_grafica = input("Nom de la gràfica a W&B: ")
 wandb.init(
     project="ciudades-resnet18",
     name=nom_grafica,
-    config={ #indiquem els hiperparàmetres i altres detalls del projecte que volem trackejar a wandb
+    config={
         "epochs": NUM_EPOCHS,
         "learning_rate": LR,
         "batch_size": BATCH_SIZE,
         "model": "efficientnet_b0",
         "optimizer": "AdamW",
         "loss": "CrossEntropyLoss",
-        "fc": "Linear(128)-BatchNorm-ReLU-Linear"
+        "fc": "Linear(96)-BatchNorm-ReLU-Linear",
+        "augmentation": "RandomHorizontalFlip + ColorJitter"
     }
 )
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Device:", device)
 

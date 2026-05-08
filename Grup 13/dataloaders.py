@@ -150,24 +150,59 @@ def get_dataloaders():
     #
     # Ho fem perquè ResNet18 està preentrenada amb ImageNet i espera entrades
     # amb una distribució semblant a la que va veure durant el seu entrenament original.
-    transform = transforms.Compose([
+    
+    # Transformacions per TRAIN.
+    # Aquí sí que afegim data augmentation perquè el model vegi variacions de les imatges
+    # i no memoritzi tant el dataset.
+    train_transform = transforms.Compose([
         transforms.Resize((IMG_SIZE, IMG_SIZE)),
+
+    # Gira horitzontalment algunes imatges de forma aleatòria.
+    # Ajuda a generalitzar si l'orientació esquerra/dreta no és important.
+        transforms.RandomHorizontalFlip(p=0.5),
+
+    # Modifica lleugerament brillantor, contrast i saturació.
+    # Té sentit perquè les fotos poden tenir llum o colors diferents.
+        transforms.ColorJitter(
+            brightness=0.2,
+            contrast=0.2,
+            saturation=0.2
+        ),
+
         transforms.ToTensor(),
-        transforms.Normalize( #x_normalitzat = (x - mean) / std
-            mean=[0.485, 0.456, 0.406], #mitjana dels canals R, G i B d'ImageNet
-            std=[0.229, 0.224, 0.225] #desviació estàndard dels canals R, G i B d'ImageNet
+        transforms.Normalize(
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225]
         )
     ])
 
-    
-    dataset = ImageDataset(
+    # Transformacions per VALIDACIÓ i TEST.
+    # Aquí NO fem data augmentation perquè volem avaluar sempre les mateixes imatges
+    # de manera estable i justa.
+    eval_transform = transforms.Compose([
+        transforms.Resize((IMG_SIZE, IMG_SIZE)),
+        transforms.ToTensor(),
+        transforms.Normalize(
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225]
+        )
+    ])
+
+    # Creem dos datasets base:
+    # un amb augmentation per train i un sense augmentation per validation/test.
+    train_dataset_full = ImageDataset(
         samples=samples,
-        transform=transform
+        transform=train_transform
     )
 
-    train_dataset = Subset(dataset, train_indices)
-    val_dataset = Subset(dataset, val_indices)
-    test_dataset = Subset(dataset, test_indices)
+    eval_dataset_full = ImageDataset(
+        samples=samples,
+        transform=eval_transform
+    )
+
+    train_dataset = Subset(train_dataset_full, train_indices)
+    val_dataset = Subset(eval_dataset_full, val_indices)
+    test_dataset = Subset(eval_dataset_full, test_indices)
 
     # Comptem quants exemples hi ha de cada classe al train.
     train_labels = [samples[i][1] for i in train_indices]
