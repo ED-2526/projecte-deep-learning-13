@@ -65,6 +65,7 @@ class FCFinal(nn.Module):
             nn.Linear(in_features,96),
             nn.BatchNorm1d(96),
             nn.ReLU(),
+            nn.Dropout(p=0.3),
             nn.Linear(96, num_classes)
         )
 
