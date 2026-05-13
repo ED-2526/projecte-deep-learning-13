@@ -65,8 +65,3 @@ def get_model(num_classes):
     
     return model
 
-# Bloc de prova ràpida (només s'executa si obres aquest fitxer directament)
-if __name__ == "__main__":
-    test_model = get_model(num_classes=10)
-    print("Model construït correctament.")
-    print(f"Estructura del classificador final:\n{test_model.classifier[1]}")
