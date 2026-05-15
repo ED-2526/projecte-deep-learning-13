@@ -27,7 +27,7 @@ PKL_PATH = "/home/edxnG13/grup13/dataset_pickle.pkl"
 # "crop_flip_jitter"
 # "affine_flip_jitter"
 # "crop_flip_jitter_rotation"
-AUGMENTATION_TYPE = "rotation"
+AUGMENTATION_TYPE = "perspective"
 
 # num_workers indica quants processos de CPU carreguen imatges en paral·lel.
 # 4 és un valor bastant habitual: accelera la càrrega sense saturar massa la màquina.
