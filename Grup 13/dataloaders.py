@@ -27,7 +27,7 @@ PKL_PATH = "/home/edxnG13/grup13/dataset_pickle.pkl"
 # "crop_flip_jitter"
 # "affine_flip_jitter"
 # "crop_flip_jitter_rotation"
-AUGMENTATION_TYPE = "flip"
+AUGMENTATION_TYPE = "jitter"
 
 # num_workers indica quants processos de CPU carreguen imatges en paral·lel.
 # 4 és un valor bastant habitual: accelera la càrrega sense saturar massa la màquina.
@@ -173,10 +173,9 @@ def get_train_transform():
         return transforms.Compose([
             transforms.Resize((IMG_SIZE, IMG_SIZE)),
             transforms.ColorJitter(
-                brightness=0.2,
-                contrast=0.2,
-                saturation=0.2
-            ),
+                brightness=0.3,
+                contrast=0.3,
+                saturation=0.3            ),
             transforms.ToTensor(),
             normalize
         ])
@@ -237,9 +236,9 @@ def get_train_transform():
             transforms.Resize((IMG_SIZE, IMG_SIZE)),
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.ColorJitter(
-                brightness=0.2,
-                contrast=0.2,
-                saturation=0.2
+                brightness=0.3,
+                contrast=0.3,
+                saturation=0.3
             ),
             transforms.ToTensor(),
             normalize
@@ -271,9 +270,9 @@ def get_train_transform():
             ),
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.ColorJitter(
-                brightness=0.2,
-                contrast=0.2,
-                saturation=0.2
+                brightness=0.3,
+                contrast=0.3,
+                saturation=0.3
             ),
             transforms.ToTensor(),
             normalize
@@ -287,9 +286,9 @@ def get_train_transform():
             ),
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.ColorJitter(
-                brightness=0.2,
-                contrast=0.2,
-                saturation=0.2
+                brightness=0.3,
+                contrast=0.3,
+                saturation=0.3
             ),
             transforms.RandomRotation(10),
             transforms.ToTensor(),
