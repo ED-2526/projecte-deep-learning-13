@@ -24,6 +24,7 @@ PKL_PATH = "/home/edxnG13/grup13/dataset_pickle.pkl"
 # "blur"
 # "affine"
 # "flip_jitter"
+#"flip_jitter_rotation"
 # "crop_flip_jitter"
 # "affine_flip_jitter"
 # "crop_flip_jitter_rotation"
@@ -242,6 +243,22 @@ def get_train_transform():
             ),
             transforms.ToTensor(),
             normalize
+        ])
+    elif AUGMENTATION_TYPE == "flip_jitter_rotation":
+        return transforms.Compose([
+            transforms.Resize((IMG_SIZE, IMG_SIZE)),
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomRotation(10),
+            transforms.ColorJitter(
+                brightness=0.3,
+                contrast=0.3,
+                saturation=0.3
+            ),
+            transforms.ToTensor(),
+            transforms.Normalize(
+                mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225]
+            )
         ])
 
     elif AUGMENTATION_TYPE == "crop_flip_jitter":
