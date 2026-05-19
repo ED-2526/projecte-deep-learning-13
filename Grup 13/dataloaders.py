@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 # CONFIGURACIÓ GENERAL
 IMAGES_PATH = "/home/edxnG13/grup13/Images"
 BATCH_SIZE = 32
-IMG_SIZE = 224
+IMG_SIZE = 448
 SEED = 42
 PKL_PATH = "/home/edxnG13/grup13/dataset_pickle.pkl"
 
