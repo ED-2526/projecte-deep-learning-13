@@ -361,12 +361,12 @@ for epoch in range(NUM_EPOCHS_ESP):
             batch_features = torch.flatten(batch_features, 1)
             
         # 🇺🇸 SUB-BUCLE USA
-        mask_usa = torch.isin(labels, torch.tensor(usa_global_indices).to(device))
-        if mask_usa.sum() > 1: # Protecció BatchNorm
-            bat_tr_usa += 1
-            feat_usa = batch_features[mask_usa]
-            lbl_global_usa = labels[mask_usa]
-            lbl_local_usa = torch.tensor([global_to_local_usa[lbl.item()] for lbl in lbl_global_usa]).to(device)
+        mask_usa = torch.isin(labels, torch.tensor(usa_global_indices).to(device)) #comparem cada etiqueta del batch per agafar només les que pertanyen a USA
+        if mask_usa.sum() > 1: #necessitem més d'una mostra per fer BatchNorm
+            bat_tr_usa += 1 #comptador de batches efectius per a USA
+            feat_usa = batch_features[mask_usa] #agafem només les característiques de les mostres d'USA
+            lbl_global_usa = labels[mask_usa] #agafem les etiquetes globals d'aquestes mostres (0, 3, 5)
+            lbl_local_usa = torch.tensor([global_to_local_usa[lbl.item()] for lbl in lbl_global_usa]).to(device) #passa dels noms globals (0, 3, 5) a locals (0, 1, 2) per a l'especialista USA
             
             out_usa = especialista_usa(feat_usa)
             loss_u = criterion_usa(out_usa, lbl_local_usa)
