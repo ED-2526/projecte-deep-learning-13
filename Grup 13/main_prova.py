@@ -61,12 +61,9 @@ class FocalLoss(nn.Module):
         # Apliquem el factor Focal Loss a la pèrdua pesada
         focal_loss = ((1 - pt) ** self.gamma) * ce_loss
         
-        if self.reduction == 'mean':
-            return focal_loss.mean()
-        elif self.reduction == 'sum':
-            return focal_loss.sum()
-        else:
-            return focal_loss
+       
+        return focal_loss.mean()
+        
 
 # =========================
 # CONFIG
